@@ -35,8 +35,13 @@
             </div>
 
             <div class="filter-group">
-                <label for="favorite-min">Min. omiljenih:</label>
-                <input type="number" id="favorite-min" value="0" min="0" onchange="updateFilter()">
+                <label for="favorite-filter">Omiljeni (favoriti):</label>
+                <select id="favorite-filter" onchange="updateFilter()">
+                    <option value="all">Sve</option>
+                    <option value="none">Bez favorita (treba usvajanje)</option>
+                    <option value="few">Malo favorita (0-1)</option>
+                    <option value="some">Ima favorita (2+)</option>
+                </select>
             </div>
         </div>
 

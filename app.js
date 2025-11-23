@@ -128,7 +128,7 @@ function updateFilter() {
     // Get all filter values
     const minWaterings = parseInt(document.getElementById('watering-min').value) || 0;
     const minTotalWaterings = parseInt(document.getElementById('total-watering-min').value) || 0;
-    const minFavorites = parseInt(document.getElementById('favorite-min').value) || 0;
+    const favoriteFilter = document.getElementById('favorite-filter').value;
     const statusFilter = document.getElementById('status-filter').value;
     const daysSinceFilter = document.getElementById('days-since-watering').value;
 
@@ -148,7 +148,17 @@ function updateFilter() {
             // Apply all filters
             const meetsWateringCriteria = parsedData.broj_zalivanja_7dana >= minWaterings;
             const meetsTotalWateringCriteria = parsedData.ukupan_broj_zalivanja >= minTotalWaterings;
-            const meetsFavoriteCriteria = parsedData.omiljeno >= minFavorites;
+
+            // Apply favorite filter
+            let meetsFavoriteCriteria = true;
+            if (favoriteFilter === 'none') {
+                meetsFavoriteCriteria = parsedData.omiljeno === 0;
+            } else if (favoriteFilter === 'few') {
+                meetsFavoriteCriteria = parsedData.omiljeno <= 1;
+            } else if (favoriteFilter === 'some') {
+                meetsFavoriteCriteria = parsedData.omiljeno >= 2;
+            }
+
             const meetsStatusCriteria = statusFilter === 'all' || parsedData.stanje === statusFilter;
 
             // Apply days since watering filter
@@ -232,7 +242,7 @@ function updateFilter() {
 function resetFilters() {
     document.getElementById('watering-min').value = 0;
     document.getElementById('total-watering-min').value = 0;
-    document.getElementById('favorite-min').value = 0;
+    document.getElementById('favorite-filter').value = 'all';
     document.getElementById('status-filter').value = 'all';
     document.getElementById('days-since-watering').value = 'all';
     updateFilter();
