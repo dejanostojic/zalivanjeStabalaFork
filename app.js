@@ -1,0 +1,239 @@
+// 1. Initialize the map centered on Belgrade, Blok 30
+const map = L.map('mapid').setView([44.8195, 20.4174], 15);
+let geojsonData = null; // Store the original GeoJSON data
+let currentLayer = null; // Store the current displayed layer
+
+// 2. Add the base tile layer (OpenStreetMap)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// 3. Fetch and load the GeoJSON data
+const geojsonUrl = 'https://raw.githubusercontent.com/blok30zalivanje/zalivanjeStabala/refs/heads/main/nasastabla.geojson';
+
+fetch(geojsonUrl)
+    .then(response => response.json())
+    .then(data => {
+        geojsonData = data;
+        console.log('GeoJSON data loaded:', data);
+
+        // Update total count
+        document.getElementById('total-count').textContent = data.features.length;
+
+        // Apply the initial filter (show all)
+        updateFilter();
+    })
+    .catch(error => {
+        console.error('Error loading GeoJSON:', error);
+        alert('Greška pri učitavanju podataka. Proverite internet konekciju.');
+    });
+
+// 4. Function to parse description field to extract structured data
+function parseDescription(description) {
+    const data = {
+        broj_zalivanja_7dana: 0,
+        ukupan_broj_zalivanja: 0,
+        stanje: 'N/A',
+        vrsta: '',
+        najbliza_adresa: '',
+        omiljeno: 0,
+        poslednje_zalivanje: null
+    };
+
+    if (!description) return data;
+
+    // Extract broj zalivanja u 7 dana
+    const match7dana = description.match(/Broj zalivanja u 7 dana:\s*(\d+)/);
+    if (match7dana) {
+        data.broj_zalivanja_7dana = parseInt(match7dana[1]);
+    }
+
+    // Extract ukupan broj zalivanja
+    const matchUkupan = description.match(/Ukupan broj zalivanja:\s*(\d+)/);
+    if (matchUkupan) {
+        data.ukupan_broj_zalivanja = parseInt(matchUkupan[1]);
+    }
+
+    // Extract prijavljeno kao omiljeno
+    const matchOmiljeno = description.match(/Prijavljeno kao omiljeno:\s*(\d+)/);
+    if (matchOmiljeno) {
+        data.omiljeno = parseInt(matchOmiljeno[1]);
+    }
+
+    // Extract voda ili kisa (last watering date)
+    const matchDatum = description.match(/Voda ili kisa:\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
+    if (matchDatum) {
+        data.poslednje_zalivanje = matchDatum[1];
+    }
+
+    // Extract stanje
+    const matchStanje = description.match(/Stanje:\s*([^\n]+)/);
+    if (matchStanje) {
+        data.stanje = matchStanje[1].trim();
+    }
+
+    // Extract vrsta
+    const matchVrsta = description.match(/Vrsta:\s*([^\n]+)/);
+    if (matchVrsta) {
+        data.vrsta = matchVrsta[1].trim();
+    }
+
+    // Extract najbliza adresa
+    const matchAdresa = description.match(/Najbliza adresa:\s*([^\n]+)/);
+    if (matchAdresa) {
+        data.najbliza_adresa = matchAdresa[1].trim();
+    }
+
+    return data;
+}
+
+// Helper function to calculate days since last watering
+function getDaysSinceWatering(dateString) {
+    if (!dateString) return Infinity;
+
+    try {
+        // Parse date in MM/DD/YYYY format
+        const parts = dateString.split('/');
+        const month = parseInt(parts[0]) - 1; // JS months are 0-indexed
+        const day = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+
+        const wateringDate = new Date(year, month, day);
+        const today = new Date();
+
+        // Calculate difference in days
+        const diffTime = Math.abs(today - wateringDate);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        return diffDays;
+    } catch (e) {
+        return Infinity;
+    }
+}
+
+// 5. Function to get marker color based on watering count
+function getMarkerColor(broj_zalivanja, stanje) {
+    if (stanje === 'Suvo' || stanje === 'Izvadjeno') return '#d73027'; // Red for dry/removed trees
+    if (broj_zalivanja >= 5) return '#1a9850'; // Dark green for well-watered
+    if (broj_zalivanja >= 3) return '#91cf60'; // Light green
+    if (broj_zalivanja >= 1) return '#fee08b'; // Yellow
+    return '#d73027'; // Red for no watering
+}
+
+// 6. Custom filter function
+function updateFilter() {
+    if (!geojsonData) return; // Wait until data is loaded
+
+    // Get all filter values
+    const minWaterings = parseInt(document.getElementById('watering-min').value) || 0;
+    const minTotalWaterings = parseInt(document.getElementById('total-watering-min').value) || 0;
+    const minFavorites = parseInt(document.getElementById('favorite-min').value) || 0;
+    const statusFilter = document.getElementById('status-filter').value;
+    const daysSinceFilter = document.getElementById('days-since-watering').value;
+
+    // Remove the current layer if it exists
+    if (currentLayer) {
+        map.removeLayer(currentLayer);
+    }
+
+    let visibleCount = 0;
+
+    // Create a new GeoJSON layer with filtered data
+    currentLayer = L.geoJSON(geojsonData, {
+        filter: function(feature) {
+            // Parse the description to get structured data
+            const parsedData = parseDescription(feature.properties.description);
+
+            // Apply all filters
+            const meetsWateringCriteria = parsedData.broj_zalivanja_7dana >= minWaterings;
+            const meetsTotalWateringCriteria = parsedData.ukupan_broj_zalivanja >= minTotalWaterings;
+            const meetsFavoriteCriteria = parsedData.omiljeno >= minFavorites;
+            const meetsStatusCriteria = statusFilter === 'all' || parsedData.stanje === statusFilter;
+
+            // Apply days since watering filter
+            let meetsDaysCriteria = true;
+            if (daysSinceFilter !== 'all') {
+                const daysSince = getDaysSinceWatering(parsedData.poslednje_zalivanje);
+
+                // Parse filter type (max:X or min:X)
+                const [filterType, filterValue] = daysSinceFilter.split(':');
+                const days = parseInt(filterValue);
+
+                if (filterType === 'max') {
+                    // Show trees watered within the last X days
+                    meetsDaysCriteria = daysSince <= days;
+                } else if (filterType === 'min') {
+                    // Show trees NOT watered in the last X days (more than X days)
+                    meetsDaysCriteria = daysSince > days;
+                }
+            }
+
+            const passes = meetsWateringCriteria &&
+                          meetsTotalWateringCriteria &&
+                          meetsFavoriteCriteria &&
+                          meetsStatusCriteria &&
+                          meetsDaysCriteria;
+
+            if (passes) visibleCount++;
+
+            return passes;
+        },
+        pointToLayer: function(feature, latlng) {
+            // Parse the description to get structured data
+            const parsedData = parseDescription(feature.properties.description);
+            const color = getMarkerColor(
+                parsedData.broj_zalivanja_7dana,
+                parsedData.stanje
+            );
+
+            return L.circleMarker(latlng, {
+                radius: 8,
+                fillColor: color,
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        },
+        onEachFeature: function(feature, layer) {
+            // Parse the description to get structured data
+            const parsedData = parseDescription(feature.properties.description);
+            const props = feature.properties;
+
+            // Calculate days since last watering
+            const daysSince = parsedData.poslednje_zalivanje
+                ? getDaysSinceWatering(parsedData.poslednje_zalivanje)
+                : 'N/A';
+
+            const popupContent = `
+                <div class="popup-content">
+                    <h3>Stablo #${props.name || 'N/A'}</h3>
+                    <p><strong>Stanje:</strong> ${parsedData.stanje}</p>
+                    <p><strong>Broj zalivanja (7 dana):</strong> ${parsedData.broj_zalivanja_7dana}</p>
+                    <p><strong>Ukupno zalivanja:</strong> ${parsedData.ukupan_broj_zalivanja}</p>
+                    <p><strong>Omiljeno:</strong> ${parsedData.omiljeno}</p>
+                    ${parsedData.poslednje_zalivanje ? `<p><strong>Poslednje zalivanje:</strong> ${parsedData.poslednje_zalivanje} (${daysSince} dana)</p>` : ''}
+                    ${parsedData.vrsta ? `<p><strong>Vrsta:</strong> ${parsedData.vrsta}</p>` : ''}
+                    ${parsedData.najbliza_adresa ? `<p><strong>Adresa:</strong> ${parsedData.najbliza_adresa}</p>` : ''}
+                </div>
+            `;
+            layer.bindPopup(popupContent);
+        }
+    }).addTo(map);
+
+    // Update visible count
+    document.getElementById('visible-count').textContent = visibleCount;
+
+    console.log(`Filter applied: showing ${visibleCount} trees.`);
+}
+
+// 7. Reset all filters to default
+function resetFilters() {
+    document.getElementById('watering-min').value = 0;
+    document.getElementById('total-watering-min').value = 0;
+    document.getElementById('favorite-min').value = 0;
+    document.getElementById('status-filter').value = 'all';
+    document.getElementById('days-since-watering').value = 'all';
+    updateFilter();
+}
