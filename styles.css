@@ -322,6 +322,23 @@ body {
     transform: translateY(0);
 }
 
+.confirmation-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.thank-you-btn.cancel-btn {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.thank-you-btn.cancel-btn:hover {
+    background: #d0d0d0;
+    box-shadow: none;
+}
+
 /* Tablet and up */
 @media (min-width: 600px) {
     #custom-controls {
