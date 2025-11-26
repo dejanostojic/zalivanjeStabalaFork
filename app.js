@@ -42,63 +42,6 @@ function checkThankYouMessage() {
     }
 }
 
-// Check when user returns to tab (for mobile browsers)
-function setupVisibilityCheck() {
-    document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'visible') {
-            const lastWateredTime = localStorage.getItem('lastWateredTime');
-            // Ask if user submitted within 10 minutes of clicking the button
-            if (lastWateredTime) {
-                const timeDiff = Date.now() - parseInt(lastWateredTime);
-                const tenMinutes = 10 * 60 * 1000;
-                if (timeDiff < tenMinutes && timeDiff > 2000) {
-                    const treeId = localStorage.getItem('lastWateredTree');
-                    const treeSpecies = localStorage.getItem('lastWateredSpecies');
-                    if (treeId) {
-                        showConfirmationModal(treeId, treeSpecies);
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Show confirmation modal asking if user submitted the form
-function showConfirmationModal(treeId, treeSpecies) {
-    const modal = document.createElement('div');
-    modal.className = 'thank-you-modal';
-    modal.innerHTML = `
-        <div class="thank-you-content">
-            <div class="thank-you-icon">🌳</div>
-            <h2>Da li si prijavio zalivanje?</h2>
-            <p>Jesi li poslao/la formular za stablo #${treeId}?</p>
-            <div class="confirmation-buttons">
-                <button onclick="confirmSubmission(true)" class="thank-you-btn">Da, jesam!</button>
-                <button onclick="confirmSubmission(false)" class="thank-you-btn cancel-btn">Ne još</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-// Handle confirmation response
-function confirmSubmission(didSubmit) {
-    const treeId = localStorage.getItem('lastWateredTree');
-    const treeSpecies = localStorage.getItem('lastWateredSpecies');
-
-    // Close confirmation modal
-    closeThankYouModal();
-
-    if (didSubmit && treeId) {
-        // Show thank you modal
-        setTimeout(() => showThankYouModal(treeId, treeSpecies), 350);
-    }
-
-    // Clear stored data either way
-    localStorage.removeItem('lastWateredTree');
-    localStorage.removeItem('lastWateredSpecies');
-    localStorage.removeItem('lastWateredTime');
-}
 
 // Show thank you modal
 function showThankYouModal(treeId, treeSpecies) {
@@ -137,10 +80,7 @@ function closeThankYouModal() {
 }
 
 // Run on page load
-document.addEventListener('DOMContentLoaded', function() {
-    checkThankYouMessage();
-    setupVisibilityCheck();
-});
+document.addEventListener('DOMContentLoaded', checkThankYouMessage);
 let geojsonData = null; // Store the original GeoJSON data
 let currentLayer = null; // Store the current displayed layer
 
