@@ -16,6 +16,7 @@ function submitWatering(treeNumber, treeSpecies) {
     // Store tree info in localStorage for thank you message
     localStorage.setItem('lastWateredTree', treeNumber);
     localStorage.setItem('lastWateredSpecies', treeSpecies || '');
+    localStorage.setItem('lastWateredTime', Date.now().toString());
 
     const url = `${GOOGLE_FORM_BASE_URL}?usp=pp_url&${FORM_FIELD_TREE_NUMBER}=${encodeURIComponent(treeNumber)}&${FORM_FIELD_DATE}_year=${year}&${FORM_FIELD_DATE}_month=${month}&${FORM_FIELD_DATE}_day=${day}`;
     window.open(url, '_blank');
@@ -34,10 +35,36 @@ function checkThankYouMessage() {
             // Clear stored data after showing
             localStorage.removeItem('lastWateredTree');
             localStorage.removeItem('lastWateredSpecies');
+            localStorage.removeItem('lastWateredTime');
         }
         // Clean up URL without reloading
         window.history.replaceState({}, document.title, window.location.pathname);
     }
+}
+
+// Check when user returns to tab (for mobile browsers)
+function setupVisibilityCheck() {
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            const lastWateredTime = localStorage.getItem('lastWateredTime');
+            // Show thank you if user returns within 10 minutes of clicking the button
+            if (lastWateredTime) {
+                const timeDiff = Date.now() - parseInt(lastWateredTime);
+                const tenMinutes = 10 * 60 * 1000;
+                if (timeDiff < tenMinutes && timeDiff > 3000) { // More than 3 seconds (had time to submit)
+                    const treeId = localStorage.getItem('lastWateredTree');
+                    const treeSpecies = localStorage.getItem('lastWateredSpecies');
+                    if (treeId) {
+                        showThankYouModal(treeId, treeSpecies);
+                        // Clear stored data after showing
+                        localStorage.removeItem('lastWateredTree');
+                        localStorage.removeItem('lastWateredSpecies');
+                        localStorage.removeItem('lastWateredTime');
+                    }
+                }
+            }
+        }
+    });
 }
 
 // Show thank you modal
@@ -77,7 +104,10 @@ function closeThankYouModal() {
 }
 
 // Run on page load
-document.addEventListener('DOMContentLoaded', checkThankYouMessage);
+document.addEventListener('DOMContentLoaded', function() {
+    checkThankYouMessage();
+    setupVisibilityCheck();
+});
 let geojsonData = null; // Store the original GeoJSON data
 let currentLayer = null; // Store the current displayed layer
 
