@@ -1,5 +1,21 @@
 // 1. Initialize the map centered on Belgrade, Blok 30
 const map = L.map('mapid').setView([44.8195, 20.4174], 15);
+
+// Google Form pre-filled URL
+const GOOGLE_FORM_BASE_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf2Oo5LST0nLDF135VpKvtRxVkb18YZKWcemW30mBJcGQE0qg/viewform';
+const FORM_FIELD_TREE_NUMBER = 'entry.2036944082';
+const FORM_FIELD_DATE = 'entry.188616753';
+
+// Function to open pre-filled Google Form
+function submitWatering(treeNumber) {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // JS months are 0-indexed
+    const day = today.getDate();
+
+    const url = `${GOOGLE_FORM_BASE_URL}?usp=pp_url&${FORM_FIELD_TREE_NUMBER}=${encodeURIComponent(treeNumber)}&${FORM_FIELD_DATE}_year=${year}&${FORM_FIELD_DATE}_month=${month}&${FORM_FIELD_DATE}_day=${day}`;
+    window.open(url, '_blank');
+}
 let geojsonData = null; // Store the original GeoJSON data
 let currentLayer = null; // Store the current displayed layer
 
@@ -216,9 +232,10 @@ function updateFilter() {
                 ? getDaysSinceWatering(parsedData.poslednje_zalivanje)
                 : 'N/A';
 
+            const treeNumber = props.name || '';
             const popupContent = `
                 <div class="popup-content">
-                    <h3>Stablo #${props.name || 'N/A'}</h3>
+                    <h3>Stablo #${treeNumber || 'N/A'}</h3>
                     <p><strong>Stanje:</strong> ${parsedData.stanje}</p>
                     <p><strong>Broj zalivanja (7 dana):</strong> ${parsedData.broj_zalivanja_7dana}</p>
                     <p><strong>Ukupno zalivanja:</strong> ${parsedData.ukupan_broj_zalivanja}</p>
@@ -226,6 +243,7 @@ function updateFilter() {
                     ${parsedData.poslednje_zalivanje ? `<p><strong>Poslednje zalivanje:</strong> ${parsedData.poslednje_zalivanje} (${daysSince} dana)</p>` : ''}
                     ${parsedData.vrsta ? `<p><strong>Vrsta:</strong> ${parsedData.vrsta}</p>` : ''}
                     ${parsedData.najbliza_adresa ? `<p><strong>Adresa:</strong> ${parsedData.najbliza_adresa}</p>` : ''}
+                    ${treeNumber ? `<button class="watering-btn" onclick="submitWatering('${treeNumber}')">Zalivao sam!</button>` : ''}
                 </div>
             `;
             layer.bindPopup(popupContent);
@@ -246,4 +264,15 @@ function resetFilters() {
     document.getElementById('status-filter').value = 'all';
     document.getElementById('days-since-watering').value = 'all';
     updateFilter();
+}
+
+// 8. Toggle filters on mobile
+function toggleFilters() {
+    // Only toggle on mobile (< 600px)
+    if (window.innerWidth < 600) {
+        const controls = document.getElementById('custom-controls');
+        controls.classList.toggle('collapsed');
+        // Invalidate map size after toggle animation
+        setTimeout(() => map.invalidateSize(), 300);
+    }
 }

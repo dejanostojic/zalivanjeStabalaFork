@@ -8,9 +8,10 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div id="custom-controls">
-        <h2>Filter zalivanja stabala</h2>
+    <div id="custom-controls" class="collapsed">
+        <h2 onclick="toggleFilters()">Filter zalivanja stabala</h2>
 
+        <div class="filters-container">
         <div class="filter-row">
             <div class="filter-group">
                 <label for="watering-min">Min. zalivanja (7 dana):</label>
@@ -75,6 +76,7 @@
         <div class="stats" id="stats">
             <span id="visible-count">0</span> / <span id="total-count">0</span> stabala
         </div>
+        </div><!-- /.filters-container -->
     </div>
     <div id="mapid"></div>
 

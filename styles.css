@@ -9,37 +9,59 @@ body {
     background-color: #f5f5f5;
 }
 
+/* Mobile-first: Controls */
 #custom-controls {
-    padding: 20px;
+    padding: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 #custom-controls h2 {
-    margin-bottom: 20px;
-    font-size: 24px;
+    margin-bottom: 12px;
+    font-size: 18px;
     font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+#custom-controls h2::after {
+    content: '▼';
+    font-size: 12px;
+    transition: transform 0.3s;
+}
+
+#custom-controls.collapsed h2::after {
+    transform: rotate(-90deg);
+}
+
+#custom-controls.collapsed .filters-container {
+    display: none;
+}
+
+.filters-container {
+    display: block;
 }
 
 .filter-row {
     display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    flex: 1;
-    min-width: 200px;
+    gap: 4px;
+    width: 100%;
 }
 
 .filter-group label {
     font-weight: 500;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .filter-group input[type="number"],
@@ -48,9 +70,19 @@ body {
     padding: 10px 12px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 16px; /* Prevents zoom on iOS */
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: white;
+}
+
+.filter-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
 }
 
 .filter-group input[type="number"]:focus,
@@ -68,70 +100,194 @@ body {
 
 .filter-group button:hover {
     background: #ffed4e;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .filter-group button:active {
-    transform: translateY(0);
+    background: #e6c200;
 }
 
 .stats {
-    margin-top: 15px;
-    padding: 12px;
+    margin-top: 10px;
+    padding: 10px;
     background: rgba(255,255,255,0.2);
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     text-align: center;
 }
 
+/* Mobile-first: Map takes most of the screen */
 #mapid {
-    height: calc(100vh - 200px);
+    height: calc(100vh - 160px);
+    height: calc(100dvh - 160px); /* Dynamic viewport height for mobile browsers */
     width: 100%;
     border-top: 3px solid #764ba2;
 }
 
+/* When filters are collapsed, map gets more space */
+#custom-controls.collapsed + #mapid {
+    height: calc(100vh - 60px);
+    height: calc(100dvh - 60px);
+}
+
+/* Move Leaflet zoom controls to bottom-right on mobile */
+.leaflet-top.leaflet-left {
+    top: auto;
+    bottom: 20px;
+    left: auto;
+    right: 10px;
+}
+
+.leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+}
+
+.leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 18px !important;
+}
+
 /* Popup styling */
+.leaflet-popup-content-wrapper {
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.leaflet-popup-content {
+    margin: 12px;
+    min-width: 200px;
+}
+
 .popup-content {
     font-family: inherit;
 }
 
 .popup-content h3 {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: #333;
     font-size: 16px;
+    font-weight: 600;
 }
 
 .popup-content p {
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 .popup-content strong {
     color: #333;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    .filter-row {
-        flex-direction: column;
-    }
+/* Watering button in popup */
+.watering-btn {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
 
-    .filter-group {
-        min-width: 100%;
-    }
+.watering-btn:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
 
+.watering-btn:active {
+    transform: scale(0.98);
+}
+
+.watering-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.watering-btn.success {
+    background: linear-gradient(135deg, #1a9850 0%, #91cf60 100%);
+}
+
+.watering-btn.error {
+    background: linear-gradient(135deg, #d73027 0%, #f46d43 100%);
+}
+
+/* Tablet and up */
+@media (min-width: 600px) {
     #custom-controls {
-        padding: 15px;
+        padding: 16px;
     }
 
     #custom-controls h2 {
         font-size: 20px;
+        cursor: default;
     }
 
-    #mapid {
-        height: calc(100vh - 400px);
+    #custom-controls h2::after {
+        display: none;
+    }
+
+    #custom-controls.collapsed .filters-container {
+        display: block;
+    }
+
+    .filter-row {
+        flex-direction: row;
+        gap: 16px;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 0;
+    }
+
+    #mapid,
+    #custom-controls.collapsed + #mapid {
+        height: calc(100vh - 220px);
+    }
+
+    .leaflet-top.leaflet-left {
+        top: 10px;
+        bottom: auto;
+        left: 10px;
+        right: auto;
+    }
+}
+
+/* Desktop */
+@media (min-width: 900px) {
+    #custom-controls {
+        padding: 20px;
+    }
+
+    #custom-controls h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+
+    .filter-group label {
+        font-size: 14px;
+    }
+
+    #mapid,
+    #custom-controls.collapsed + #mapid {
+        height: calc(100vh - 200px);
+    }
+
+    .leaflet-popup-content {
+        min-width: 250px;
     }
 }
