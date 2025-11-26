@@ -1,5 +1,5 @@
 // 1. Initialize the map centered on Belgrade, Blok 30
-const map = L.map('mapid').setView([44.8195, 20.4174], 15);
+const map = L.map('mapid').setView([44.8195, 20.4174], 18);
 
 // Google Form pre-filled URL
 const GOOGLE_FORM_BASE_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf2Oo5LST0nLDF135VpKvtRxVkb18YZKWcemW30mBJcGQE0qg/viewform';
