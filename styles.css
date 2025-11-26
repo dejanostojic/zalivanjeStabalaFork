@@ -220,6 +220,108 @@ body {
     background: linear-gradient(135deg, #d73027 0%, #f46d43 100%);
 }
 
+/* Thank you modal */
+.thank-you-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.thank-you-modal.closing {
+    animation: fadeOut 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.thank-you-content {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+.thank-you-modal.closing .thank-you-content {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(30px); opacity: 0; }
+}
+
+.thank-you-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.thank-you-content h2 {
+    color: #1a9850;
+    font-size: 24px;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.thank-you-content p {
+    color: #333;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.thank-you-subtitle {
+    color: #666 !important;
+    font-size: 14px !important;
+}
+
+.thank-you-btn {
+    margin-top: 20px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #1a9850 0%, #91cf60 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.thank-you-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(26, 152, 80, 0.4);
+}
+
+.thank-you-btn:active {
+    transform: translateY(0);
+}
+
 /* Tablet and up */
 @media (min-width: 600px) {
     #custom-controls {

@@ -7,15 +7,77 @@ const FORM_FIELD_TREE_NUMBER = 'entry.2036944082';
 const FORM_FIELD_DATE = 'entry.188616753';
 
 // Function to open pre-filled Google Form
-function submitWatering(treeNumber) {
+function submitWatering(treeNumber, treeSpecies) {
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth() + 1; // JS months are 0-indexed
     const day = today.getDate();
 
+    // Store tree info in localStorage for thank you message
+    localStorage.setItem('lastWateredTree', treeNumber);
+    localStorage.setItem('lastWateredSpecies', treeSpecies || '');
+
     const url = `${GOOGLE_FORM_BASE_URL}?usp=pp_url&${FORM_FIELD_TREE_NUMBER}=${encodeURIComponent(treeNumber)}&${FORM_FIELD_DATE}_year=${year}&${FORM_FIELD_DATE}_month=${month}&${FORM_FIELD_DATE}_day=${day}`;
     window.open(url, '_blank');
 }
+
+// Check for thank you parameter on page load
+function checkThankYouMessage() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Only show if thanks=1 AND we have a stored tree number
+    if (urlParams.get('thanks') === '1') {
+        const treeId = localStorage.getItem('lastWateredTree');
+        const treeSpecies = localStorage.getItem('lastWateredSpecies');
+        if (treeId) {
+            showThankYouModal(treeId, treeSpecies);
+            // Clear stored data after showing
+            localStorage.removeItem('lastWateredTree');
+            localStorage.removeItem('lastWateredSpecies');
+        }
+        // Clean up URL without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+// Show thank you modal
+function showThankYouModal(treeId, treeSpecies) {
+    // Check if species is valid (not null, not empty, doesn't start with "- Stanje:")
+    const isValidSpecies = treeSpecies &&
+                           treeSpecies.trim() !== '' &&
+                           !treeSpecies.startsWith('- Stanje:');
+    const treeName = isValidSpecies ? `${treeSpecies} #${treeId}` : `Stablo #${treeId}`;
+
+    const modal = document.createElement('div');
+    modal.className = 'thank-you-modal';
+    modal.innerHTML = `
+        <div class="thank-you-content">
+            <div class="thank-you-icon">🌳💧</div>
+            <h2>Hvala ti, komšija!</h2>
+            <p><strong>${treeName}</strong> ti je zahvalno na zalivanju!</p>
+            <p class="thank-you-subtitle">Tvoja briga čini naš kraj zelenijim. Svaka kap vode pomaže!</p>
+            <button onclick="closeThankYouModal()" class="thank-you-btn">Nastavi</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeThankYouModal();
+    });
+}
+
+// Close thank you modal
+function closeThankYouModal() {
+    const modal = document.querySelector('.thank-you-modal');
+    if (modal) {
+        modal.classList.add('closing');
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', checkThankYouMessage);
 let geojsonData = null; // Store the original GeoJSON data
 let currentLayer = null; // Store the current displayed layer
 
@@ -243,7 +305,7 @@ function updateFilter() {
                     ${parsedData.poslednje_zalivanje ? `<p><strong>Poslednje zalivanje:</strong> ${parsedData.poslednje_zalivanje} (${daysSince} dana)</p>` : ''}
                     ${parsedData.vrsta ? `<p><strong>Vrsta:</strong> ${parsedData.vrsta}</p>` : ''}
                     ${parsedData.najbliza_adresa ? `<p><strong>Adresa:</strong> ${parsedData.najbliza_adresa}</p>` : ''}
-                    ${treeNumber ? `<button class="watering-btn" onclick="submitWatering('${treeNumber}')">Zalivao sam!</button>` : ''}
+                    ${treeNumber ? `<button class="watering-btn" onclick="submitWatering('${treeNumber}', '${parsedData.vrsta || ''}')">Zalivao sam!</button>` : ''}
                 </div>
             `;
             layer.bindPopup(popupContent);
